@@ -22,8 +22,8 @@ interface StudentRegistration {
 const REG_STORAGE_KEY = 'vspark_student_registration_v1';
 
 const DEFAULT_REGISTRATION: StudentRegistration = {
-  teamName: 'Vspark Studio Builders',
-  leadStudent: 'Aarav Mehta',
+  teamName: 'Vspark AI Studio',
+  leadStudent: 'Ahmad Rayan Qasim & Ateeque Alvi',
   registrationId: 'VSPARK-2026-0412',
   institution: 'Institute of Engineering & Technology',
   track: 'AI & Full-Stack SaaS',
@@ -93,10 +93,11 @@ export function SubmissionArchitectureModal({
 
 ## Team Details
 - **Team Name:** ${registration.teamName}
-- **Team Members / Lead:** ${registration.leadStudent}
+- **Team Members / Students:** ${registration.leadStudent}
 - **Registration Numbers:** ${registration.registrationId}
 - **Institution:** ${registration.institution}
 - **Competition Track:** ${registration.track}
+- **Live Deployment URL:** https://vsparkai.vercel.app/
 - **Google Drive Folder:** \`vspark-folder\`
 
 ## System Architecture

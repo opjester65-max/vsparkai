@@ -131,8 +131,10 @@ Configure these keys in `.env` (never commit `.env`; `.gitignore` excludes `.env
 
 ## Team Details
 
-- **Team Members:** Aarav Mehta (Team Lead & Full-Stack Engineer)
+- **Team Members:**
+  - Ahmad Rayan Qasim
+  - Ateeque Alvi
 - **Registration Numbers:** VSPARK-2026-0412
-- **Live Vercel URL:** https://vspark-studio-2026.vercel.app
+- **Live Vercel URL:** https://vsparkai.vercel.app/
 - **Public GitHub URL:** https://github.com/your-username/vspark-2026-scheduler
 - **Google Drive Folder:** `vspark-folder`
