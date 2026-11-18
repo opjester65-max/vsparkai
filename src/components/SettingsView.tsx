@@ -34,6 +34,7 @@ import {
   type DriveExportFormat,
   type DriveSyncLogEntry,
 } from '../lib/driveSyncService';
+import { useToast } from '../context/ToastContext';
 
 interface SettingsViewProps {
   user: AuthUser;
@@ -64,6 +65,7 @@ export function SettingsView({
   onOpenArchitecture,
   onSignOut,
 }: SettingsViewProps) {
+  const { pushToast } = useToast();
   const [displayName, setDisplayName] = useState(profile.displayName);
   const [handle, setHandle] = useState(profile.handle);
   const [headline, setHeadline] = useState(profile.headline);
@@ -99,6 +101,7 @@ export function SettingsView({
       headline: headline.trim() || profile.headline,
     });
     setProfileSaved(true);
+    pushToast('Updated creator preview identity.', 'success');
     setTimeout(() => setProfileSaved(false), 2000);
   };
 
@@ -107,6 +110,7 @@ export function SettingsView({
     setEmailError(null);
     saveEmailSettings(user.id, emailSettings);
     setEmailSaved(true);
+    pushToast('Saved email notification rules.', 'success');
     setTimeout(() => setEmailSaved(false), 2000);
   };
 
@@ -125,9 +129,9 @@ export function SettingsView({
           'Your scheduled multi-platform campaign is ready to go live.',
       });
       setDispatchLogs(logs);
-      setEmailToast(
-        `Test reminder sent to ${entry.recipientEmail} via ${entry.channel === 'emailjs' ? 'EmailJS' : 'Studio Webhook'}.`
-      );
+      const msg = `Test reminder sent to ${entry.recipientEmail} via ${entry.channel === 'emailjs' ? 'EmailJS' : 'Studio Webhook'}.`;
+      setEmailToast(msg);
+      pushToast(msg, 'success');
     } catch (err) {
       setEmailError(
         err instanceof Error ? err.message : 'Failed to dispatch test email.'
@@ -149,9 +153,9 @@ export function SettingsView({
         format: driveFormat,
       });
       setDriveLogs(logs);
-      setDriveToast(
-        `${entry.statusLabel} (${entry.postCount} posts · ${entry.format.toUpperCase()}).`
-      );
+      const msg = `${entry.statusLabel} · Just now (${entry.postCount} posts · ${entry.format.toUpperCase()}).`;
+      setDriveToast(msg);
+      pushToast(msg, 'success');
     } catch (err) {
       setDriveError(
         err instanceof Error ? err.message : 'Failed to sync posts to Drive.'

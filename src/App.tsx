@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Moon, Server, Sun } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { ToastProvider, useToast } from './context/ToastContext';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { Navbar } from './components/Navbar';
@@ -55,6 +56,7 @@ function getInitialProfile(): CreatorProfile {
 
 function StudioWorkspace() {
   const { user, signOut, isSupabaseConfigured } = useAuth();
+  const { pushToast } = useToast();
   const [activeTab, setActiveTab] = useState<NavTab>('generator');
   const [theme, setTheme] = useState<ThemeMode>(getInitialTheme);
   const [posts, setPosts] = useState<ScheduledPost[]>([]);
@@ -159,24 +161,29 @@ function StudioWorkspace() {
     setActiveTab('generator');
   };
 
+  const handleSignOut = async () => {
+    await signOut();
+    pushToast('Signed out of Vspark Studio.', 'info');
+  };
+
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 studio-grid-bg flex flex-col">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 studio-grid-bg flex flex-col overflow-x-hidden">
       <Navbar
         activeTab={activeTab}
         onTabChange={setActiveTab}
-        onSignOut={signOut}
+        onSignOut={() => void handleSignOut()}
       />
 
-      <div className="w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-4 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 truncate">
+      <div className="w-full max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 pt-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 min-w-0 truncate">
           <span className="font-medium text-slate-700 dark:text-slate-300 truncate">
             {user.email}
           </span>
           <span aria-hidden="true">·</span>
           <span className="whitespace-nowrap">
-            {user.provider === 'supabase' ? 'Supabase PostgreSQL Sync' : 'Judge Demo Workspace'}
+            {user.provider === 'supabase' ? 'Supabase Sync' : 'Demo Workspace'}
           </span>
         </div>
 
@@ -184,7 +191,7 @@ function StudioWorkspace() {
           <button
             type="button"
             onClick={() => setArchitectureOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-300 hover:border-indigo-500/60 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-300 hover:border-indigo-500/60 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             <Server className="w-3.5 h-3.5 text-indigo-500" />
             <span>Submission &amp; Docs</span>
@@ -194,24 +201,24 @@ function StudioWorkspace() {
             type="button"
             onClick={() => setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'))}
             aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-xs font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors whitespace-nowrap shrink-0 cursor-pointer"
           >
             {theme === 'dark' ? (
               <>
                 <Sun className="w-3.5 h-3.5" />
-                <span>Light Mode</span>
+                <span className="hidden sm:inline">Light Mode</span>
               </>
             ) : (
               <>
                 <Moon className="w-3.5 h-3.5" />
-                <span>Dark Mode</span>
+                <span className="hidden sm:inline">Dark Mode</span>
               </>
             )}
           </button>
         </div>
       </div>
 
-      <main className="flex-1 w-full max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 w-full max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 py-6">
         {activeTab === 'dashboard' && (
           <DashboardView
             posts={posts}
@@ -253,7 +260,7 @@ function StudioWorkspace() {
             profile={profile}
             onProfileUpdate={setProfile}
             onOpenArchitecture={() => setArchitectureOpen(true)}
-            onSignOut={signOut}
+            onSignOut={() => void handleSignOut()}
           />
         )}
       </main>
@@ -271,11 +278,13 @@ function StudioWorkspace() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <AuthProvider>
-        <ProtectedRoute>
-          <StudioWorkspace />
-        </ProtectedRoute>
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <ProtectedRoute>
+            <StudioWorkspace />
+          </ProtectedRoute>
+        </AuthProvider>
+      </ToastProvider>
     </ErrorBoundary>
   );
 }

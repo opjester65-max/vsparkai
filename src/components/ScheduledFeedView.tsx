@@ -42,6 +42,7 @@ import {
   readEmailSettings,
   sendTestEmailReminder,
 } from '../lib/notificationService';
+import { useToast } from '../context/ToastContext';
 
 interface ScheduledFeedViewProps {
   user: AuthUser;
@@ -154,6 +155,7 @@ export function ScheduledFeedView({
   onDeletePost,
   onNavigate,
 }: ScheduledFeedViewProps) {
+  const { pushToast } = useToast();
   const [viewMode, setViewMode] = useState<FeedViewMode>('grid');
   const [platformFilter, setPlatformFilter] = useState<'All' | PlatformOption>('All');
   const [statusFilter, setStatusFilter] = useState<'All' | PostStatus>('All');
@@ -185,6 +187,7 @@ export function ScheduledFeedView({
 
   const showToast = (msg: string) => {
     setActionToast(msg);
+    pushToast(msg, 'success');
     window.setTimeout(() => {
       setActionToast((prev) => (prev === msg ? null : prev));
     }, 4000);
@@ -400,7 +403,10 @@ export function ScheduledFeedView({
               <>
                 <span aria-hidden="true">·</span>
                 <span className="text-emerald-600 dark:text-emerald-400 font-medium">
-                  {driveLogs[0].statusLabel} ({new Date(driveLogs[0].syncedAt).toLocaleTimeString()})
+                  Synced to Drive ·{' '}
+                  {Date.now() - new Date(driveLogs[0].syncedAt).getTime() < 90_000
+                    ? 'Just now'
+                    : new Date(driveLogs[0].syncedAt).toLocaleTimeString()}
                 </span>
               </>
             )}
@@ -501,14 +507,14 @@ export function ScheduledFeedView({
       )}
 
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+        <div className="flex flex-wrap items-center gap-3 min-w-0">
+          <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-w-full overflow-x-auto">
             {PLATFORM_FILTERS.map((item) => (
               <button
                 key={item}
                 type="button"
                 onClick={() => setPlatformFilter(item)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap ${
+                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                   platformFilter === item
                     ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -519,13 +525,13 @@ export function ScheduledFeedView({
             ))}
           </div>
 
-          <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-1 p-1 rounded-lg bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 max-w-full overflow-x-auto">
             {STATUS_FILTERS.map((item) => (
               <button
                 key={item}
                 type="button"
                 onClick={() => setStatusFilter(item)}
-                className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap ${
+                className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0 ${
                   statusFilter === item
                     ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs'
                     : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
@@ -619,12 +625,12 @@ export function ScheduledFeedView({
                   </div>
                 )}
 
-                <p className="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-line leading-relaxed">
+                <p className="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-line break-words leading-relaxed">
                   {post.caption}
                 </p>
 
                 {post.hashtags.length > 0 && (
-                  <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium">
+                  <p className="text-xs text-indigo-600 dark:text-indigo-400 font-medium break-words">
                     {post.hashtags.join(' ')}
                   </p>
                 )}
@@ -762,51 +768,55 @@ export function ScheduledFeedView({
             </div>
           </div>
 
-          <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-800 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
-              <div key={day} className="py-2.5 border-r last:border-r-0 border-slate-200 dark:border-slate-800">
-                {day}
+          <div className="overflow-x-auto">
+            <div className="min-w-[680px]">
+              <div className="grid grid-cols-7 border-b border-slate-200 dark:border-slate-800 text-center text-xs font-medium text-slate-500 dark:text-slate-400">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => (
+                  <div key={day} className="py-2.5 border-r last:border-r-0 border-slate-200 dark:border-slate-800">
+                    {day}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          <div className="grid grid-cols-7">
-            {calendarDays.map((cell, idx) => {
-              const dayPosts = cell.dateKey ? postsByDateKey.get(cell.dateKey) || [] : [];
-              return (
-                <div
-                  key={idx}
-                  className="min-h-[116px] p-2 border-r border-b border-slate-200 dark:border-slate-800/80 last:border-r-0 bg-white/40 dark:bg-slate-950/30 space-y-1.5"
-                >
-                  {cell.day && (
-                    <div className="font-mono text-xs font-medium text-slate-500 dark:text-slate-400 tabular-nums">
-                      {cell.day}
-                    </div>
-                  )}
-                  {dayPosts.map((post) => (
-                    <button
-                      key={post.id}
-                      type="button"
-                      onClick={() => setEditingPost(post)}
-                      className="w-full text-left rounded-md border border-indigo-500/30 bg-indigo-50 dark:bg-indigo-950/50 px-2 py-1.5 space-y-0.5 hover:border-indigo-500 transition-colors cursor-pointer"
+              <div className="grid grid-cols-7">
+                {calendarDays.map((cell, idx) => {
+                  const dayPosts = cell.dateKey ? postsByDateKey.get(cell.dateKey) || [] : [];
+                  return (
+                    <div
+                      key={idx}
+                      className="min-h-[116px] p-2 border-r border-b border-slate-200 dark:border-slate-800/80 last:border-r-0 bg-white/40 dark:bg-slate-950/30 space-y-1.5"
                     >
-                      <div className="flex items-center justify-between gap-1 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300">
-                        <span className="truncate">{post.platform}</span>
-                        <span className="font-mono tabular-nums shrink-0">
-                          {new Date(post.scheduledAt).toLocaleTimeString([], {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                      </div>
-                      <p className="text-[11px] text-slate-700 dark:text-slate-300 line-clamp-1">
-                        {post.caption}
-                      </p>
-                    </button>
-                  ))}
-                </div>
-              );
-            })}
+                      {cell.day && (
+                        <div className="font-mono text-xs font-medium text-slate-500 dark:text-slate-400 tabular-nums">
+                          {cell.day}
+                        </div>
+                      )}
+                      {dayPosts.map((post) => (
+                        <button
+                          key={post.id}
+                          type="button"
+                          onClick={() => setEditingPost(post)}
+                          className="w-full text-left rounded-md border border-indigo-500/30 bg-indigo-50 dark:bg-indigo-950/50 px-2 py-1.5 space-y-0.5 hover:border-indigo-500 transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-center justify-between gap-1 text-[11px] font-semibold text-indigo-700 dark:text-indigo-300">
+                            <span className="truncate">{post.platform}</span>
+                            <span className="font-mono tabular-nums shrink-0">
+                              {new Date(post.scheduledAt).toLocaleTimeString([], {
+                                hour: '2-digit',
+                                minute: '2-digit',
+                              })}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-slate-700 dark:text-slate-300 line-clamp-1">
+                            {post.caption}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           </div>
         </div>
       )}

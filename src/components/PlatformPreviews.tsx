@@ -178,13 +178,13 @@ export function PlatformPreviews({
                 : 'border-slate-200 dark:border-slate-800'
             }`}
           >
-            <div className="flex items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
                 <span className="font-semibold text-sky-600 dark:text-sky-400">LinkedIn</span>
                 <span aria-hidden="true">·</span>
                 <span>Feed Post</span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <CharacterCount count={combinedCopy.length} limit={PLATFORM_LIMITS.LinkedIn} />
                 <button
                   type="button"
@@ -212,10 +212,10 @@ export function PlatformPreviews({
               </div>
             </div>
 
-            <div className="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-line leading-relaxed">
+            <div className="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-line break-words leading-relaxed">
               {caption || 'Your tailored LinkedIn copy will render here in real time as you type or generate.'}
               {hashtags.length > 0 && (
-                <p className="mt-3 text-indigo-600 dark:text-indigo-400 font-medium">
+                <p className="mt-3 text-indigo-600 dark:text-indigo-400 font-medium break-words">
                   {hashtags.join(' ')}
                 </p>
               )}
@@ -229,7 +229,7 @@ export function PlatformPreviews({
               />
             )}
 
-            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex flex-wrap items-center justify-between gap-1 text-xs text-slate-500 dark:text-slate-400">
               <button
                 type="button"
                 onClick={() => toggle(setLiked, 'li')}
@@ -280,13 +280,13 @@ export function PlatformPreviews({
                 : 'border-slate-200 dark:border-slate-800'
             }`}
           >
-            <div className="flex items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
                 <span className="font-semibold text-slate-900 dark:text-white">X / Twitter</span>
                 <span aria-hidden="true">·</span>
                 <span>Single Post</span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <CharacterCount count={xCombinedCopy.length} limit={PLATFORM_LIMITS.X} />
                 <button
                   type="button"
@@ -312,13 +312,13 @@ export function PlatformPreviews({
                   <span className="text-slate-400" aria-hidden="true">
                     ·
                   </span>
-                  <span className="text-slate-400 text-xs">1m</span>
+                  <span className="text-slate-400 text-xs shrink-0">1m</span>
                 </div>
 
-                <p className="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-line leading-relaxed">
+                <p className="text-sm text-slate-800 dark:text-slate-200 whitespace-pre-line break-words leading-relaxed">
                   {caption || 'Your concise X post copy will update live here.'}
                   {hashtags.length > 0 && (
-                    <span className="text-indigo-600 dark:text-indigo-400">
+                    <span className="text-indigo-600 dark:text-indigo-400 break-words">
                       {' '}
                       {hashtags.slice(0, 3).join(' ')}
                     </span>
@@ -387,13 +387,13 @@ export function PlatformPreviews({
                 : 'border-slate-200 dark:border-slate-800'
             }`}
           >
-            <div className="flex items-center justify-between gap-4 border-b border-slate-100 dark:border-slate-800 pb-3">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2 text-xs font-medium text-slate-700 dark:text-slate-300">
                 <span className="font-semibold text-fuchsia-600 dark:text-fuchsia-400">Instagram</span>
                 <span aria-hidden="true">·</span>
                 <span>Visual Card</span>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 sm:gap-3">
                 <CharacterCount count={combinedCopy.length} limit={PLATFORM_LIMITS.Instagram} />
                 <button
                   type="button"
@@ -461,11 +461,11 @@ export function PlatformPreviews({
               </button>
             </div>
 
-            <div className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line">
+            <div className="text-sm text-slate-800 dark:text-slate-200 leading-relaxed whitespace-pre-line break-words">
               <span className="font-semibold mr-1.5">{profile.handle.replace(/^@/, '')}</span>
               {caption || 'Your Instagram story caption and hashtags will preview here.'}
               {hashtags.length > 0 && (
-                <p className="mt-2 text-indigo-600 dark:text-indigo-400 text-xs font-medium">
+                <p className="mt-2 text-indigo-600 dark:text-indigo-400 text-xs font-medium break-words">
                   {hashtags.join(' ')}
                 </p>
               )}

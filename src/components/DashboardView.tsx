@@ -69,8 +69,8 @@ export function DashboardView({
         </button>
       </section>
 
-      <section aria-label="Workspace Metrics" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-5 space-y-2">
+      <section aria-label="Workspace Metrics" className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/60 p-4 sm:p-5 space-y-2">
           <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
             Scheduled Posts
           </p>

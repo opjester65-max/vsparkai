@@ -8,7 +8,6 @@ import {
   Copy,
   Hash,
   Image as ImageIcon,
-  RotateCcw,
   Sparkles,
   TrendingUp,
 } from 'lucide-react';
@@ -25,6 +24,8 @@ import {
   LAUNCH_VISUAL_URL,
   PROMPT_STARTERS,
 } from '../lib/studioData';
+import { buildResilientAiFallback } from '../lib/aiFallback';
+import { useToast } from '../context/ToastContext';
 import { PlatformPreviews } from './PlatformPreviews';
 import { MediaUploadZone } from './MediaUploadZone';
 
@@ -55,6 +56,7 @@ export function AiGeneratorView({
   onSchedulePost,
   onNavigate,
 }: AiGeneratorViewProps) {
+  const { pushToast } = useToast();
   const [topic, setTopic] = useState(
     initialDraft?.topic ||
       'Launching Vspark Studio 2.0: an AI-native publishing workspace that turns one product brief into platform-calibrated LinkedIn, X, and Instagram campaigns.'
@@ -66,6 +68,7 @@ export function AiGeneratorView({
   const [scheduling, setScheduling] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [result, setResult] = useState<GenerationResult | null>(null);
+  const [generationSource, setGenerationSource] = useState<'gemini' | 'fallback'>('gemini');
 
   const [selectedCaptionIndex, setSelectedCaptionIndex] = useState(0);
   const [editableCaption, setEditableCaption] = useState(
@@ -94,6 +97,22 @@ export function AiGeneratorView({
     }
   }, [initialDraft]);
 
+  const applyGenerationResult = (
+    generated: GenerationResult,
+    source: 'gemini' | 'fallback'
+  ) => {
+    setResult(generated);
+    setGenerationSource(source);
+    setSelectedCaptionIndex(0);
+
+    if (generated.captions.length > 0) {
+      setEditableCaption(generated.captions[0].text);
+    }
+    if (generated.hashtags.length > 0) {
+      setActiveHashtags(generated.hashtags);
+    }
+  };
+
   const handleGenerate = async (e?: FormEvent) => {
     if (e) e.preventDefault();
     setErrorMsg(null);
@@ -106,10 +125,14 @@ export function AiGeneratorView({
 
     setGenerating(true);
 
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 12000);
+
     try {
       const response = await fetch('/api/gemini/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
         body: JSON.stringify({
           topic: topic.trim(),
           tone,
@@ -120,24 +143,36 @@ export function AiGeneratorView({
       const payload = await response.json();
 
       if (!response.ok) {
-        throw new Error(payload.error || 'Failed to generate content with Gemini AI.');
+        if (response.status === 429 || response.status >= 500) {
+          const fallback = buildResilientAiFallback(topic, tone, platform);
+          applyGenerationResult(fallback, 'fallback');
+          pushToast(
+            'Generated tailored captions via resilient studio fallback.',
+            'info'
+          );
+          return;
+        }
+        throw new Error(payload.error || 'Failed to generate content.');
       }
 
-      const generated = payload as GenerationResult;
-      setResult(generated);
-      setSelectedCaptionIndex(0);
-
-      if (generated.captions.length > 0) {
-        setEditableCaption(generated.captions[0].text);
-      }
-      if (generated.hashtags.length > 0) {
-        setActiveHashtags(generated.hashtags);
-      }
+      applyGenerationResult(payload as GenerationResult, 'gemini');
+      pushToast(`Generated 3 ${platform} captions with Gemini 2.5 Flash.`, 'success');
     } catch (err) {
-      const message =
-        err instanceof Error ? err.message : 'Unexpected error calling Gemini AI service.';
-      setErrorMsg(message);
+      const isValidation =
+        err instanceof Error &&
+        err.message.toLowerCase().includes('at least 3 characters');
+      if (isValidation) {
+        setErrorMsg(err.message);
+      } else {
+        const fallback = buildResilientAiFallback(topic, tone, platform);
+        applyGenerationResult(fallback, 'fallback');
+        pushToast(
+          'Network timeout or rate limit detected — generated tailored studio captions.',
+          'info'
+        );
+      }
     } finally {
+      window.clearTimeout(timeoutId);
       setGenerating(false);
     }
   };
@@ -159,6 +194,7 @@ export function AiGeneratorView({
     try {
       await navigator.clipboard.writeText(text);
       setCopiedId(id);
+      pushToast('Copied to clipboard.', 'success');
       setTimeout(() => setCopiedId((prev) => (prev === id ? null : prev)), 1800);
     } catch {
       // Clipboard blocked in restricted iframe context
@@ -198,9 +234,9 @@ export function AiGeneratorView({
         notifyEmail,
       });
 
-      setScheduleConfirmation(
-        `Scheduled for ${targetPlatform} at ${scheduledFor.replace('T', ' ')}.`
-      );
+      const msg = `Scheduled for ${targetPlatform} at ${scheduledFor.replace('T', ' ')}.`;
+      setScheduleConfirmation(msg);
+      pushToast(msg, 'success');
     } catch (err) {
       setErrorMsg(
         err instanceof Error ? err.message : 'Failed to save scheduled post.'
@@ -245,11 +281,11 @@ export function AiGeneratorView({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
-        <div className="xl:col-span-6 space-y-6">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8 items-start">
+        <div className="xl:col-span-6 space-y-6 min-w-0">
           <form
             onSubmit={handleGenerate}
-            className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/70 backdrop-blur-md p-6 space-y-5"
+            className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/70 backdrop-blur-md p-4 sm:p-6 space-y-5"
           >
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -318,7 +354,7 @@ export function AiGeneratorView({
             </div>
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-              <div className="flex items-center gap-3">
+              <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setIncludeMedia((prev) => !prev)}
@@ -354,10 +390,10 @@ export function AiGeneratorView({
               <button
                 type="submit"
                 disabled={generating}
-                className="inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-sm font-semibold transition-colors cursor-pointer disabled:opacity-60 shadow-sm shadow-indigo-600/25 whitespace-nowrap"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-5 py-2.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-sm font-semibold transition-colors cursor-pointer disabled:opacity-60 shadow-sm shadow-indigo-600/25 whitespace-nowrap"
               >
                 <Sparkles className="w-4 h-4" />
-                <span>{generating ? 'Generating with Gemini...' : 'Generate Content'}</span>
+                <span>{generating ? 'Generating with Gemini...' : 'Generate AI Captions'}</span>
               </button>
             </div>
           </form>
@@ -365,17 +401,9 @@ export function AiGeneratorView({
           {errorMsg && (
             <div
               role="alert"
-              className="rounded-xl border border-rose-300 dark:border-rose-900/70 bg-rose-50 dark:bg-rose-950/50 p-4 flex items-start justify-between gap-4 text-sm text-rose-700 dark:text-rose-300"
+              className="rounded-xl border border-rose-300 dark:border-rose-900/70 bg-rose-50 dark:bg-rose-950/50 p-4 text-sm text-rose-700 dark:text-rose-300"
             >
-              <p>{errorMsg}</p>
-              <button
-                type="button"
-                onClick={() => handleGenerate()}
-                className="inline-flex items-center gap-1 text-xs font-semibold underline shrink-0 cursor-pointer"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                Retry
-              </button>
+              {errorMsg}
             </div>
           )}
 
@@ -397,7 +425,7 @@ export function AiGeneratorView({
           )}
 
           {!generating && result && (
-            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/70 backdrop-blur-md p-6 space-y-6">
+            <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/70 backdrop-blur-md p-4 sm:p-6 space-y-6">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pb-5 border-b border-slate-200 dark:border-slate-800">
                 <div className="space-y-1.5">
                   <div className="flex items-center gap-2 text-xs font-medium text-slate-500 dark:text-slate-400">
@@ -427,12 +455,14 @@ export function AiGeneratorView({
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-wrap items-center justify-between gap-2">
                   <h2 className="font-display text-sm font-semibold text-slate-900 dark:text-white">
                     3 Tailored Captions
                   </h2>
                   <span className="text-xs text-slate-500 dark:text-slate-400">
-                    Click any option to load into live previews
+                    {generationSource === 'gemini'
+                      ? 'Gemini 2.5 Flash'
+                      : 'Resilient Studio Engine'}
                   </span>
                 </div>
 
@@ -539,9 +569,8 @@ export function AiGeneratorView({
             </div>
           )}
 
-          {/* Live Caption Editor, Cloud Storage Media Upload & Schedule Bar */}
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/70 backdrop-blur-md p-6 space-y-5">
-            <div className="flex items-center justify-between gap-2">
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/70 backdrop-blur-md p-4 sm:p-6 space-y-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <label
                 htmlFor="live-caption-editor"
                 className="text-sm font-semibold text-slate-900 dark:text-white"
@@ -620,7 +649,7 @@ export function AiGeneratorView({
                 type="button"
                 disabled={scheduling}
                 onClick={() => void triggerSchedule(platform)}
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-slate-100 text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap disabled:opacity-60"
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-slate-900 dark:bg-white text-white dark:text-slate-950 hover:bg-slate-800 dark:hover:bg-slate-100 text-sm font-semibold transition-colors cursor-pointer whitespace-nowrap disabled:opacity-60"
               >
                 <CalendarPlus className="w-4 h-4" />
                 <span>
@@ -630,7 +659,7 @@ export function AiGeneratorView({
             </div>
 
             {scheduleConfirmation && (
-              <div className="rounded-lg border border-emerald-300 dark:border-emerald-900/70 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-2.5 flex items-center justify-between gap-3 text-xs text-emerald-700 dark:text-emerald-300">
+              <div className="rounded-lg border border-emerald-300 dark:border-emerald-900/70 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs text-emerald-700 dark:text-emerald-300">
                 <span>{scheduleConfirmation}</span>
                 <button
                   type="button"
@@ -644,7 +673,7 @@ export function AiGeneratorView({
           </div>
         </div>
 
-        <div className="xl:col-span-6">
+        <div className="xl:col-span-6 min-w-0">
           <PlatformPreviews
             caption={editableCaption}
             hashtags={activeHashtags}

@@ -2,15 +2,18 @@ import { useState, type FormEvent } from 'react';
 import { motion } from 'motion/react';
 import { ArrowRight, Eye, EyeOff, Lock, Mail, User, Zap } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { JUDGE_DEMO_EMAIL, JUDGE_DEMO_PASSWORD } from '../lib/supabase';
 import { LAUNCH_VISUAL_URL } from '../lib/studioData';
+import { BrandLogo3D } from './BrandLogo3D';
 
 export function AuthScreen() {
   const { signIn, signUp, quickJudgeLogin, isSupabaseConfigured } = useAuth();
+  const { pushToast } = useToast();
   const [mode, setMode] = useState<'signin' | 'signup'>('signin');
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('VSPARK Reviewer');
+  const [email, setEmail] = useState(JUDGE_DEMO_EMAIL);
+  const [password, setPassword] = useState(JUDGE_DEMO_PASSWORD);
   const [showPassword, setShowPassword] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
@@ -34,10 +37,29 @@ export function AuthScreen() {
         setErrorMsg(response.error);
       } else if (response.notice) {
         setNoticeMsg(response.notice);
+        pushToast(response.notice, 'info');
+      } else if (response.user) {
+        pushToast(
+          mode === 'signin'
+            ? `Signed in as ${response.user.email}`
+            : `Account created for ${response.user.email}`,
+          'success'
+        );
       }
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleFillRandomTemp = () => {
+    const id = Math.floor(1000 + Math.random() * 9000);
+    setMode('signup');
+    setFullName(`Temp Tester ${id}`);
+    setEmail(`temp.${id}@vspark2026.com`);
+    setPassword(`TempPass${id}!`);
+    setShowPassword(true);
+    setErrorMsg(null);
+    setNoticeMsg('Generated a temporary account. Click Create Account to sign in with it.');
   };
 
   const handleJudgeQuickLogin = async () => {
@@ -52,6 +74,8 @@ export function AuthScreen() {
       const response = await quickJudgeLogin();
       if (response.error) {
         setErrorMsg(response.error);
+      } else {
+        pushToast('Signed in with Judge Demo account (judge@vspark2026.com).', 'success');
       }
     } finally {
       setDemoLoading(false);
@@ -60,18 +84,24 @@ export function AuthScreen() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 studio-grid-bg flex flex-col">
-      <header className="w-full max-w-6xl mx-auto px-6 py-5 flex items-center justify-between gap-8">
-        <span className="font-display text-lg font-bold tracking-tight text-slate-900 dark:text-white whitespace-nowrap shrink-0">
-          Vspark Studio
-        </span>
-        <div className="flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
-          <span>VSPARK 2026</span>
-          <span aria-hidden="true">·</span>
-          <span>{isSupabaseConfigured ? 'Supabase Auth Connected' : 'Local Studio Auth Ready'}</span>
+      <header className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-5 flex items-center justify-between gap-4">
+        <div className="inline-flex items-center gap-2.5 whitespace-nowrap shrink-0">
+          <BrandLogo3D size="sm" />
+          <span className="font-display text-lg font-bold tracking-tight text-slate-900 dark:text-white">
+            Vspark Studio
+          </span>
+        </div>
+        <div className="flex items-center gap-2.5 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap shrink-0">
+          <span className="hidden sm:inline">VSPARK 2026</span>
+          <span className="hidden sm:inline" aria-hidden="true">·</span>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" aria-hidden="true" />
+            <span>{isSupabaseConfigured ? 'Cloud Connected' : 'Studio Ready'}</span>
+          </span>
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-6xl mx-auto px-6 py-8 lg:py-12 grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-6 sm:py-10 grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-center">
         <motion.section
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -85,7 +115,7 @@ export function AuthScreen() {
             <h1 className="font-display text-3xl sm:text-4xl lg:text-[2.75rem] font-bold tracking-tight text-slate-900 dark:text-white leading-[1.12] [text-wrap:balance]">
               Turn one product brief into platform-ready social campaigns.
             </h1>
-            <p className="text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
+            <p className="text-sm sm:text-base text-slate-600 dark:text-slate-400 leading-relaxed max-w-xl">
               Generate tailored captions, viral hashtag sets, and peak posting windows powered by Gemini 2.5 Flash, then inspect live LinkedIn, X, and Instagram mockups before scheduling.
             </p>
           </div>
@@ -104,8 +134,8 @@ export function AuthScreen() {
                 Vspark Studio Multi-Platform Workspace
               </div>
             )}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent flex items-end p-5">
-              <div className="flex flex-wrap items-center gap-3 text-xs text-slate-200">
+            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-slate-950/20 to-transparent flex items-end p-4 sm:p-5">
+              <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-slate-200">
                 <span>3 Tailored Captions</span>
                 <span aria-hidden="true">·</span>
                 <span>Live LinkedIn, X &amp; Instagram Previews</span>
@@ -122,31 +152,34 @@ export function AuthScreen() {
           transition={{ duration: 0.35, delay: 0.06, ease: [0.16, 1, 0.3, 1] }}
           className="lg:col-span-6 w-full max-w-md mx-auto lg:ml-auto"
         >
-          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/75 backdrop-blur-xl p-6 sm:p-8 shadow-xl shadow-slate-950/5 dark:shadow-black/40 space-y-6">
-            <div className="space-y-1.5">
-              <h2 className="font-display text-xl font-semibold text-slate-900 dark:text-white">
-                {mode === 'signin' ? 'Sign in to Vspark Studio' : 'Create your studio account'}
-              </h2>
-              <p className="text-sm text-slate-500 dark:text-slate-400">
-                Access the AI Content Generator, Live Previews, and Scheduled Feed.
-              </p>
+          <div className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/75 backdrop-blur-xl p-5 sm:p-8 shadow-xl shadow-slate-950/5 dark:shadow-black/40 space-y-5 sm:space-y-6">
+            <div className="flex items-start gap-3">
+              <BrandLogo3D size="md" />
+              <div className="space-y-1 min-w-0">
+                <h2 className="font-display text-lg sm:text-xl font-semibold text-slate-900 dark:text-white">
+                  {mode === 'signin' ? 'Sign in to Vspark Studio' : 'Create your studio account'}
+                </h2>
+                <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
+                  Temp login credentials are pre-filled below so you can sign in immediately.
+                </p>
+              </div>
             </div>
 
             <button
               type="button"
               onClick={handleJudgeQuickLogin}
               disabled={demoLoading || submitting}
-              className="w-full flex items-center justify-center gap-2.5 px-4 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-sm font-semibold transition-colors shadow-sm shadow-indigo-600/25 cursor-pointer disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg bg-indigo-600 hover:bg-indigo-500 active:bg-indigo-700 text-white text-xs sm:text-sm font-semibold transition-colors shadow-sm shadow-indigo-600/25 cursor-pointer disabled:opacity-60 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500"
             >
               <Zap className="w-4 h-4 shrink-0" />
-              <span className="whitespace-nowrap">
+              <span className="truncate">
                 {demoLoading ? 'Signing in Judge Demo...' : '⚡ Judge Demo Auto-Fill / Quick Login'}
               </span>
             </button>
 
             <div className="flex items-center gap-3 text-xs text-slate-400 dark:text-slate-500">
               <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
-              <span>or continue with email</span>
+              <span>or use form below</span>
               <div className="h-px flex-1 bg-slate-200 dark:bg-slate-800" />
             </div>
 
@@ -155,6 +188,8 @@ export function AuthScreen() {
                 type="button"
                 onClick={() => {
                   setMode('signin');
+                  setEmail(JUDGE_DEMO_EMAIL);
+                  setPassword(JUDGE_DEMO_PASSWORD);
                   setErrorMsg(null);
                   setNoticeMsg(null);
                 }}
@@ -201,12 +236,21 @@ export function AuthScreen() {
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === 'signup' && (
                 <div className="space-y-1.5">
-                  <label
-                    htmlFor="auth-name"
-                    className="block text-xs font-medium text-slate-700 dark:text-slate-300"
-                  >
-                    Full Name
-                  </label>
+                  <div className="flex items-center justify-between gap-2">
+                    <label
+                      htmlFor="auth-name"
+                      className="block text-xs font-medium text-slate-700 dark:text-slate-300"
+                    >
+                      Full Name
+                    </label>
+                    <button
+                      type="button"
+                      onClick={handleFillRandomTemp}
+                      className="text-[11px] font-medium text-indigo-600 dark:text-indigo-400 hover:underline cursor-pointer"
+                    >
+                      Generate Temp Account
+                    </button>
+                  </div>
                   <div className="relative">
                     <User className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                     <input
@@ -292,11 +336,19 @@ export function AuthScreen() {
               </button>
             </form>
 
-            <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-              <span>Demo credentials</span>
-              <span className="font-mono tabular-nums text-slate-700 dark:text-slate-300">
-                {JUDGE_DEMO_EMAIL}
-              </span>
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-1 text-xs text-slate-500 dark:text-slate-400">
+              <div className="flex items-center justify-between gap-2">
+                <span>Temp Email</span>
+                <span className="font-mono tabular-nums text-slate-800 dark:text-slate-200 truncate">
+                  {JUDGE_DEMO_EMAIL}
+                </span>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <span>Temp Password</span>
+                <span className="font-mono tabular-nums text-slate-800 dark:text-slate-200">
+                  {JUDGE_DEMO_PASSWORD}
+                </span>
+              </div>
             </div>
           </div>
         </motion.section>

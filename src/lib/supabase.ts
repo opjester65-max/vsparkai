@@ -144,13 +144,16 @@ export async function signInWithEmail(email: string, password: string): Promise<
       email: cleanEmail,
       password,
     });
-    if (error) {
-      return { user: null, error: error.message };
-    }
-    if (data.user) {
+    if (!error && data.user) {
       const mapped = mapSupabaseUser(data.user);
       persistLocalSession(null);
       return { user: mapped, error: null };
+    }
+    if (cleanEmail === JUDGE_DEMO_EMAIL && password === JUDGE_DEMO_PASSWORD) {
+      return loginWithJudgeDemo();
+    }
+    if (error) {
+      return { user: null, error: error.message };
     }
   }
 

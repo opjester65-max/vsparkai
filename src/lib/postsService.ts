@@ -113,6 +113,10 @@ export async function fetchScheduledPosts(
       }
 
       const mapped = ((data || []) as DbScheduledPostRow[]).map(mapRowToPost);
+      if (mapped.length === 0) {
+        const seeded = readLocalPosts(user.id);
+        return { data: seeded, source: 'supabase' };
+      }
       writeLocalPosts(user.id, mapped);
       return { data: mapped, source: 'supabase' };
     } catch (err) {

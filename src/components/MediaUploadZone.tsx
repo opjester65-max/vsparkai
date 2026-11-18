@@ -1,6 +1,7 @@
 import { useRef, useState, type ChangeEvent, type DragEvent } from 'react';
 import { Image as ImageIcon, Loader2, Trash2, UploadCloud } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { uploadPostMedia } from '../lib/storageService';
 
 interface MediaUploadZoneProps {
@@ -15,6 +16,7 @@ export function MediaUploadZone({
   compact = false,
 }: MediaUploadZoneProps) {
   const { user } = useAuth();
+  const { pushToast } = useToast();
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -34,8 +36,12 @@ export function MediaUploadZone({
       onMediaChange(result.publicUrl);
       if (result.warning) {
         setStorageNotice(result.warning);
+        pushToast('Image attached via local preview fallback.', 'info');
       } else if (result.source === 'supabase-storage') {
         setStorageNotice('Uploaded to Supabase Storage (post-media).');
+        pushToast('Image uploaded to Supabase Storage (post-media).', 'success');
+      } else {
+        pushToast('Image attached to campaign preview.', 'success');
       }
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Failed to upload image.');
