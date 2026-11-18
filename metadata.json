@@ -1,0 +1,6 @@
+{
+  "name": "Vspark Studio",
+  "description": "AI-powered multi-platform social content studio with live LinkedIn, X, and Instagram previews, Supabase authentication, and scheduled publishing.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
